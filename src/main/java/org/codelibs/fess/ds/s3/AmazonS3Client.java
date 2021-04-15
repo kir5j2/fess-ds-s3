@@ -53,6 +53,8 @@ public class AmazonS3Client implements AutoCloseable {
 
     // other parameters
     protected static final String MAX_CACHED_CONTENT_SIZE = "max_cached_content_size";
+    protected static final String CUSTOM_VAR_TARGET_BUCKET_NAME = "custom_var_target_bucket_name";
+    protected static final String CUSTOM_VAR_TARGET_PREFIX = "custom_var_target_prefix";
 
     protected final Map<String, String> params;
 
@@ -67,6 +69,16 @@ public class AmazonS3Client implements AutoCloseable {
         if (StringUtil.isNotBlank(size)) {
             maxCachedContentSize = Integer.parseInt(size);
         }
+
+        // CUSTOM_VAR_TARGET_BUCKET_NAME
+        final String custom_var_target_bucket_name = params.getOrDefault(CUSTOM_VAR_TARGET_BUCKET_NAME, StringUtil.EMPTY);
+        if (custom_var_target_bucket_name.isEmpty()) {
+            throw new DataStoreException("Parameter '" + CUSTOM_VAR_TARGET_BUCKET_NAME + "' is required");
+
+        // CUSTOM_VAR_TARGET_PREFIX
+        final String custom_var_target_prefix = params.getOrDefault(CUSTOM_VAR_TARGET_PREFIX, StringUtil.EMPTY);
+        if (custom_var_target_prefix.isEmpty()) {
+            throw new DataStoreException("Parameter '" + CUSTOM_VAR_TARGET_PREFIX + "' is required");
 
         final String region = params.getOrDefault(REGION, StringUtil.EMPTY);
         if (region.isEmpty()) {
@@ -115,7 +127,7 @@ public class AmazonS3Client implements AutoCloseable {
     }
 
     public void getBuckets(final Consumer<Bucket> consumer) {
-        client.listBuckets().buckets().forEach(consumer);
+        client.listBuckets().buckets().stream().filter(bkt -> bkt.name().contains(CUSTOM_VAR_TARGET_BUCKET_NAME)).forEach(consumer);
     }
 
     public void getObjects(final String bucket, final Consumer<S3Object> consumer) {
@@ -123,17 +135,13 @@ public class AmazonS3Client implements AutoCloseable {
     }
 
     public void getObjects(final String bucket, final int maxKeys, final Consumer<S3Object> consumer) {
-        ListObjectsV2Response response = client.listObjectsV2(builder -> builder.bucket(bucket).fetchOwner(true).maxKeys(maxKeys).build());
-        while (true) {
+        ListObjectsV2Response response = client.listObjectsV2(builder -> builder.bucket(bucket).prefix(CUSTOM_VAR_TARGET_PREFIX).fetchOwner(true).maxKeys(maxKeys).build());
+        do {
             response.contents().forEach(consumer);
-            if (response.isTruncated()) {
-                final String next = response.nextContinuationToken();
-                response =
-                        client.listObjectsV2(builder -> builder.bucket(bucket).fetchOwner(true).maxKeys(maxKeys).startAfter(next).build());
-            } else {
-                break;
-            }
-        }
+            final String next = response.nextContinuationToken();
+            logger.info("**************** next: {} ****************", next);
+            response = client.listObjectsV2(builder -> builder.bucket(bucket).prefix(CUSTOM_VAR_TARGET_PREFIX).fetchOwner(true).maxKeys(maxKeys).continuationToken(next).build());
+        } while(response.isTruncated());
     }
 
     public ResponseInputStream<GetObjectResponse> getObject(final String bucket, final String key) {

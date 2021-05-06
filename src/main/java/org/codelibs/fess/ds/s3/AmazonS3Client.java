@@ -74,11 +74,13 @@ public class AmazonS3Client implements AutoCloseable {
         final String custom_var_target_bucket_name = params.getOrDefault(CUSTOM_VAR_TARGET_BUCKET_NAME, StringUtil.EMPTY);
         if (custom_var_target_bucket_name.isEmpty()) {
             throw new DataStoreException("Parameter '" + CUSTOM_VAR_TARGET_BUCKET_NAME + "' is required");
+        }
 
         // CUSTOM_VAR_TARGET_PREFIX
         final String custom_var_target_prefix = params.getOrDefault(CUSTOM_VAR_TARGET_PREFIX, StringUtil.EMPTY);
         if (custom_var_target_prefix.isEmpty()) {
             throw new DataStoreException("Parameter '" + CUSTOM_VAR_TARGET_PREFIX + "' is required");
+        }
 
         final String region = params.getOrDefault(REGION, StringUtil.EMPTY);
         if (region.isEmpty()) {
@@ -115,9 +117,8 @@ public class AmazonS3Client implements AutoCloseable {
         } catch (final Exception e) {
             throw new DataStoreException("Failed to create a client.", e);
         }
-
     }
-
+    
     public Region getRegion() {
         return region;
     }

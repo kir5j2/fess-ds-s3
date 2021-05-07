@@ -61,6 +61,8 @@ public class AmazonS3Client implements AutoCloseable {
     protected final S3Client client;
     protected final Region region;
     protected final String endpoint;
+    protected final String custom_var_target_bucket_name;
+    protected final String custom_var_target_prefix;
     protected int maxCachedContentSize = 1024 * 1024;
 
     public AmazonS3Client(final Map<String, String> params) {
@@ -75,12 +77,14 @@ public class AmazonS3Client implements AutoCloseable {
         if (custom_var_target_bucket_name.isEmpty()) {
             throw new DataStoreException("Parameter '" + CUSTOM_VAR_TARGET_BUCKET_NAME + "' is required");
         }
+        this.custom_var_target_bucket_name = params.get(CUSTOM_VAR_TARGET_BUCKET_NAME);
 
         // CUSTOM_VAR_TARGET_PREFIX
         final String custom_var_target_prefix = params.getOrDefault(CUSTOM_VAR_TARGET_PREFIX, StringUtil.EMPTY);
         if (custom_var_target_prefix.isEmpty()) {
             throw new DataStoreException("Parameter '" + CUSTOM_VAR_TARGET_PREFIX + "' is required");
         }
+        this.custom_var_target_prefix = params.get(CUSTOM_VAR_TARGET_PREFIX);
 
         final String region = params.getOrDefault(REGION, StringUtil.EMPTY);
         if (region.isEmpty()) {
@@ -127,8 +131,16 @@ public class AmazonS3Client implements AutoCloseable {
         return endpoint;
     }
 
+    public String getCUSTOM_VAR_TARGET_BUCKET_NAME() {
+        return custom_var_target_bucket_name;
+    }
+
+    public String getCUSTOM_VAR_TARGET_PREFIX() {
+        return custom_var_target_prefix;
+    }
+
     public void getBuckets(final Consumer<Bucket> consumer) {
-        client.listBuckets().buckets().stream().filter(bkt -> bkt.name().contains(CUSTOM_VAR_TARGET_BUCKET_NAME)).forEach(consumer);
+        client.listBuckets().buckets().stream().filter(bkt -> bkt.name().contains(this.custom_var_target_bucket_name)).forEach(consumer);
     }
 
     public void getObjects(final String bucket, final Consumer<S3Object> consumer) {
@@ -136,12 +148,12 @@ public class AmazonS3Client implements AutoCloseable {
     }
 
     public void getObjects(final String bucket, final int maxKeys, final Consumer<S3Object> consumer) {
-        ListObjectsV2Response response = client.listObjectsV2(builder -> builder.bucket(bucket).prefix(CUSTOM_VAR_TARGET_PREFIX).fetchOwner(true).maxKeys(maxKeys).build());
+        ListObjectsV2Response response = client.listObjectsV2(builder -> builder.bucket(bucket).prefix(this.custom_var_target_prefix).fetchOwner(true).maxKeys(maxKeys).build());
         do {
             response.contents().forEach(consumer);
             final String next = response.nextContinuationToken();
             logger.info("**************** next: {} ****************", next);
-            response = client.listObjectsV2(builder -> builder.bucket(bucket).prefix(CUSTOM_VAR_TARGET_PREFIX).fetchOwner(true).maxKeys(maxKeys).continuationToken(next).build());
+            response = client.listObjectsV2(builder -> builder.bucket(bucket).prefix(this.custom_var_target_prefix).fetchOwner(true).maxKeys(maxKeys).continuationToken(next).build());
         } while(response.isTruncated());
     }
 

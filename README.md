@@ -1,4 +1,4 @@
-Amazon S3 Data Store for Fess [![Build Status](https://travis-ci.org/codelibs/fess-ds-s3.svg?branch=master)](https://travis-ci.org/codelibs/fess-ds-s3)
+Amazon S3 Data Store for Fess
 ==========================
 
 ## Overview
@@ -21,6 +21,8 @@ See [Plugin](https://fess.codelibs.org/13.3/admin/plugin-guide.html) of Administ
 region=...
 access_key_id=...
 secret_key=...
+custom_var_target_bucket_name=...
+custom_var_target_prefix=...
 ```
 
 | Key | Value |
@@ -28,6 +30,8 @@ secret_key=...
 | *region* | The region of the S3 buckets (eg: `ap-northeast-1`) |
 | *access_key_id* | AWS Access Key ID |
 | *secret_key* | AWS Secret Key |
+| *custom_var_target_bucket_name* | S3 Bucket name to be crawled. (eg: `my-bucket`) |
+| *custom_var_target_prefix* | S3 Prefix to be crawled. Do not miss the last `/`. (eg: `crawldata/`) |
 
 ### Scripts
 
